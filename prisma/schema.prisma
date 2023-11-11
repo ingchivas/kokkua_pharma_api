@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model aseguradoras {
+  IDAseguradora     Int       @id
+  NombreAseguradora String?   @db.VarChar(100)
+  Direccion         String?   @db.VarChar(100)
+  NumContacto       String?   @db.VarChar(255)
+  polizas           polizas[]
+}
+
+model asignaciones {
+  IDPaciente      Int
+  FechaAsignacion DateTime?     @db.Date
+  IDDoctor        Int
+  IDPersonaApoyo  Int
+  IDPoliza        Int
+  personasapoyo   personasapoyo @relation(fields: [IDPersonaApoyo], references: [IDPersonaApoyo], onDelete: NoAction, onUpdate: NoAction, map: "asignaciones_ibfk_1")
+  doctores        doctores      @relation(fields: [IDDoctor], references: [IDDoctor], onDelete: NoAction, onUpdate: NoAction, map: "asignaciones_ibfk_2")
+  pacientes       pacientes     @relation(fields: [IDPaciente], references: [IDPaciente], onDelete: NoAction, onUpdate: NoAction, map: "asignaciones_ibfk_3")
+  polizas         polizas       @relation(fields: [IDPoliza], references: [IDPoliza], onDelete: NoAction, onUpdate: NoAction, map: "asignaciones_ibfk_4")
+
+  @@id([IDPaciente, IDDoctor, IDPersonaApoyo, IDPoliza])
+  @@index([IDDoctor], map: "IDDoctor")
+  @@index([IDPersonaApoyo], map: "IDPersonaApoyo")
+  @@index([IDPoliza], map: "IDPoliza")
+}
+
+model citas {
+  IDCita      Int                @id @default(autoincrement())
+  IDPaciente  Int?
+  IDDoctor    Int?
+  TipoCita    citas_TipoCita?
+  EstatusCita citas_EstatusCita?
+  Fecha       DateTime?          @db.Date
+  doctores    doctores?          @relation(fields: [IDDoctor], references: [IDDoctor], onDelete: NoAction, onUpdate: NoAction, map: "citas_ibfk_1")
+  pacientes   pacientes?         @relation(fields: [IDPaciente], references: [IDPaciente], onDelete: NoAction, onUpdate: NoAction, map: "citas_ibfk_2")
+  factura     factura[]
+  receta      receta[]
+
+  @@index([IDDoctor], map: "IDDoctor")
+  @@index([IDPaciente], map: "IDPaciente")
+}
+
+model doctores {
+  IDDoctor          Int            @id @default(autoincrement())
+  CedulaProfesional Int
+  Nombre            String?        @db.VarChar(255)
+  Apellido          String?        @db.VarChar(255)
+  FechaNacimiento   DateTime?      @db.Date
+  CostoCita         Float?
+  Especialidad      String?        @db.VarChar(255)
+  asignaciones      asignaciones[]
+  citas             citas[]
+}
+
+model empresasterceras {
+  idEmpresaTercera Int              @id @default(autoincrement())
+  Nombre           String?          @db.VarChar(255)
+  Descripcion      String?          @db.VarChar(255)
+  serviciosextra   serviciosextra[]
+}
+
+model factura {
+  idFactura Int    @id @default(autoincrement())
+  idCita    Int?
+  Costo     Float?
+  citas     citas? @relation(fields: [idCita], references: [IDCita], onDelete: NoAction, onUpdate: NoAction, map: "factura_ibfk_1")
+
+  @@index([idCita], map: "idCita")
+}
+
+model loginventarios {
+  IDLog      Int        @id @default(autoincrement())
+  IDUsuario  Int?
+  TimeStamp  DateTime?  @db.Date
+  IDMedicina Int?
+  Cantidad   Int?
+  medicinas  medicinas? @relation(fields: [IDMedicina], references: [IDMedicina], onDelete: NoAction, onUpdate: NoAction, map: "loginventarios_ibfk_1")
+  usuarios   usuarios?  @relation(fields: [IDUsuario], references: [IDUsuario], onDelete: NoAction, onUpdate: NoAction, map: "loginventarios_ibfk_2")
+
+  @@index([IDMedicina], map: "IDMedicina")
+  @@index([IDUsuario], map: "IDUsuario")
+}
+
+model lote {
+  IDLote           Int          @id @default(autoincrement())
+  IDMedicina       Int?
+  FechaManufactura DateTime     @db.Date
+  FechaExpiraci_n  DateTime     @map("FechaExpiración") @db.Date
+  IDProveedor      Int?
+  CantidadRecibida Float        @db.Float
+  CantidadRestante Float        @db.Float
+  UbicacionAlmacen String?      @db.VarChar(100)
+  proveedores      proveedores? @relation(fields: [IDProveedor], references: [IDProveedor], onDelete: NoAction, onUpdate: NoAction, map: "lote_ibfk_1")
+  medicinas        medicinas?   @relation(fields: [IDMedicina], references: [IDMedicina], onDelete: NoAction, onUpdate: NoAction, map: "lote_ibfk_2")
+
+  @@index([IDMedicina], map: "IDMedicina")
+  @@index([IDProveedor], map: "IDProveedor")
+}
+
+model medicinas {
+  IDMedicina        Int                   @id @default(autoincrement())
+  NombreMedicina    String                @db.VarChar(255)
+  Descripci_n       String?               @map("Descripción") @db.Text
+  Precio_Unitario   Float?
+  Criticidad        medicinas_Criticidad?
+  NivelDeInventario Int?
+  loginventarios    loginventarios[]
+  lote              lote[]
+  ordenes           ordenes[]
+  receta            receta[]
+}
+
+model ordenes {
+  IDOrden          Int              @id @default(autoincrement())
+  IDUsuario        Int?
+  FechaOrden       DateTime?        @db.Date
+  IDProveedor      Int?
+  IDMedicina       Int?
+  CantidadOrdenada DateTime?        @db.Date
+  EntregaEsperada  DateTime?        @db.Date
+  Costo            Float?
+  Estatus          ordenes_Estatus?
+  proveedores      proveedores?     @relation(fields: [IDProveedor], references: [IDProveedor], onDelete: NoAction, onUpdate: NoAction, map: "ordenes_ibfk_1")
+  medicinas        medicinas?       @relation(fields: [IDMedicina], references: [IDMedicina], onDelete: NoAction, onUpdate: NoAction, map: "ordenes_ibfk_2")
+  usuarios         usuarios?        @relation(fields: [IDUsuario], references: [IDUsuario], onDelete: NoAction, onUpdate: NoAction, map: "ordenes_ibfk_3")
+
+  @@index([IDMedicina], map: "IDMedicina")
+  @@index([IDProveedor], map: "IDProveedor")
+  @@index([IDUsuario], map: "IDUsuario")
+}
+
+model pacientes {
+  IDPaciente      Int                        @id @default(autoincrement())
+  Nombre          String?                    @db.VarChar(255)
+  Apellido        String?                    @db.VarChar(255)
+  Padecimento     String?                    @db.VarChar(255)
+  EstatusPaciente pacientes_EstatusPaciente?
+  SaldoActual     Float?
+  asignaciones    asignaciones[]
+  citas           citas[]
+  serviciosextra  serviciosextra[]
+}
+
+model personasapoyo {
+  IDPersonaApoyo Int            @id @default(autoincrement())
+  Nombre         String?        @db.VarChar(255)
+  Apellido       String?        @db.VarChar(255)
+  TipoDeServicio String?        @db.VarChar(255)
+  asignaciones   asignaciones[]
+}
+
+model polizas {
+  IDPoliza           Int                   @id @default(autoincrement())
+  IDAseguradora      Int?
+  Vigencia_de_Poliza DateTime?             @db.Date
+  TipoDePoliza       polizas_TipoDePoliza?
+  SumaAsegurada      Float?
+  FechaInicio        DateTime?             @db.Date
+  Prima              Float?
+  asignaciones       asignaciones[]
+  aseguradoras       aseguradoras?         @relation(fields: [IDAseguradora], references: [IDAseguradora], onDelete: NoAction, onUpdate: NoAction, map: "polizas_ibfk_1")
+
+  @@index([IDAseguradora], map: "IDAseguradora")
+}
+
+model proveedores {
+  IDProveedor Int       @id @default(autoincrement())
+  Nombre      String    @db.VarChar(255)
+  Ubicaci_n   String?   @map("Ubicación") @db.VarChar(255)
+  NumContacto String?   @db.VarChar(255)
+  lote        lote[]
+  ordenes     ordenes[]
+}
+
+model receta {
+  IDReceta       Int        @id @default(autoincrement())
+  IDCita         Int?
+  IDMedicina     Int?
+  CantidadDiaria Int?
+  Indicaciones   String?    @db.Text
+  citas          citas?     @relation(fields: [IDCita], references: [IDCita], onDelete: NoAction, onUpdate: NoAction, map: "receta_ibfk_1")
+  medicinas      medicinas? @relation(fields: [IDMedicina], references: [IDMedicina], onDelete: NoAction, onUpdate: NoAction, map: "receta_ibfk_2")
+
+  @@index([IDCita], map: "IDCita")
+  @@index([IDMedicina], map: "IDMedicina")
+}
+
+model serviciosextra {
+  IDServicio       Int                     @id @default(autoincrement())
+  IDEmpresaTercera Int?
+  IDPaciente       Int?
+  Fecha_contratada DateTime?               @db.Date
+  Costo            Float?
+  Estatus          serviciosextra_Estatus?
+  empresasterceras empresasterceras?       @relation(fields: [IDEmpresaTercera], references: [idEmpresaTercera], onDelete: NoAction, onUpdate: NoAction, map: "serviciosextra_ibfk_1")
+  pacientes        pacientes?              @relation(fields: [IDPaciente], references: [IDPaciente], onDelete: NoAction, onUpdate: NoAction, map: "serviciosextra_ibfk_2")
+
+  @@index([IDEmpresaTercera], map: "IDEmpresaTercera")
+  @@index([IDPaciente], map: "IDPaciente")
+}
+
+model usuarios {
+  IDUsuario      Int                  @id @default(autoincrement())
+  Password       String?              @db.VarChar(100)
+  TipoAcceso     usuarios_TipoAcceso?
+  loginventarios loginventarios[]
+  ordenes        ordenes[]
+}
+
+enum usuarios_TipoAcceso {
+  Almacen
+  Proveedor
+  Ejecutivo
+  Compras
+}
+
+enum polizas_TipoDePoliza {
+  Premium
+  Estandar
+  Basica
+}
+
+enum citas_TipoCita {
+  Estandar
+  DePrueba
+}
+
+enum citas_EstatusCita {
+  Realizada
+  Agendada
+  Cancelada
+}
+
+enum medicinas_Criticidad {
+  Alto
+  Medio
+  Bajo
+}
+
+enum pacientes_EstatusPaciente {
+  Muerto
+  Critico
+  Atencion_Constante
+  Estable
+  Servicio_Expirado
+}
+
+enum serviciosextra_Estatus {
+  Realizado
+  Agendado
+  Cancelado
+}
+
+enum ordenes_Estatus {
+  Realizado
+  Agendado
+  Cancelado
+}
