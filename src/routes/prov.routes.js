@@ -2,7 +2,7 @@ import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 
 
-const router = Router();
+const prov_router = Router();
 const prisma = new PrismaClient();
 
 // model proveedores {
@@ -15,19 +15,19 @@ const prisma = new PrismaClient();
 //   }
 
 
-router.get('/testProveedores', async (req, res) => {
+prov_router.get('/testProveedores', async (req, res) => {
     const proveedores = await prisma.proveedores.findMany();
     res.json(proveedores);
 })
 
-router.get('/getProveedores', async (req, res) => {
+prov_router.get('/getProveedores', async (req, res) => {
     const proveedores = await prisma.proveedores.findMany({
     });
     res.json(proveedores);
 }
 )
 
-router.get('/getProveedores/names', async (req, res) => {
+prov_router.get('/getProveedores/names', async (req, res) => {
     const proveedoresNames = await prisma.proveedores.findMany({
         select: {
             Nombre: true
@@ -36,7 +36,7 @@ router.get('/getProveedores/names', async (req, res) => {
     res.json(proveedoresNames);
 })
 
-router.post('/registerProveedor', async (req, res) => {
+prov_router.post('/registerProveedor', async (req, res) => {
     const { Nombre, Ubicaci_n, NumContacto } = req.body;
     console.log(req.body);
     const newProveedor = await prisma.proveedores.create({
@@ -50,7 +50,7 @@ router.post('/registerProveedor', async (req, res) => {
 })
 
 // Delete proveedor by ID
-router.delete('/deleteProveedor/:id', async (req, res) => {
+prov_router.delete('/deleteProveedor/:id', async (req, res) => {
     const { id } = req.params;
     const deleteProveedor = await prisma.proveedores.delete({
         where: {
@@ -61,7 +61,7 @@ router.delete('/deleteProveedor/:id', async (req, res) => {
 })
 
 // Update proveedor by ID
-router.put('/updateProveedor/:id', async (req, res) => {
+prov_router.put('/updateProveedor/:id', async (req, res) => {
     console.log(req.body);
     const { id } = req.params;
     const { Nombre, Ubicaci_n, NumContacto } = req.body;
@@ -82,4 +82,4 @@ router.put('/updateProveedor/:id', async (req, res) => {
 
 
 
-export default router;
+export default prov_router;
