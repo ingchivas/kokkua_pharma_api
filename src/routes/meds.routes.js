@@ -57,7 +57,7 @@ router_meds.get('/critical', async (req, res) => {
     });
 
     // Return the first 3 medicines
-    res.json(meds.slice(0, 5));
+    res.json(meds.slice(0, 3));
 });
 
 
