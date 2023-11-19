@@ -15,12 +15,6 @@ app.use(express.json());
 app.use('/api', prov_router);
 app.use('/api/meds', router_meds);
 app.use('/api/orders', router_orders);
-app.get('/', (req, res) => {
-    res.json({ message: 'API ONLINE' });
-}
-);
-
-
 
 app.listen(6969);
 console.log('Server port on: ', 6969);
