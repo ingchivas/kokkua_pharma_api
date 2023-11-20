@@ -147,27 +147,11 @@ router_orders.get('/getLeadTime', async (req, res) => {
 });
 
 router_orders.get('/graph', async (req, res) => {
-    res.json({
-        "labels": [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July"
-        ],
-        "data": [
-            65,
-            59,
-            80,
-            81,
-            56,
-            55,
-            40
-        ]
-    });
-    
+    res.json(
+        {
+            "message": new Date().getUTCDate()
+        }
+    )
 });
 
 
