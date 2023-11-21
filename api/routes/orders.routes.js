@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 //     FechaOrden       DateTime?        @db.Date
 //     IDProveedor      Int?
 //     IDMedicina       Int?
-//     CantidadOrdenada DateTime?        @db.Date
+//     CantidadOrdenada Int?
 //     EntregaEsperada  DateTime?        @db.Date
 //     Costo            Float?
 //     Estatus          ordenes_Estatus?
@@ -243,7 +243,168 @@ router_orders.get('/graph', async (req, res) => {
         }
     });
 
+// Given a provider ID, get the 3 most ordered medicines and their total orders and names
+router_orders.get('/topMeds/:id', async (req, res) => {
+    try {
+        const orders = await prisma.ordenes.findMany({
+            select: {
+                IDMedicina: true
+            },
+            where: {
+                IDProveedor: parseInt(req.params.id)
+            }
+        });
 
+        const medicineCount = orders.reduce((acc, order) => {
+            acc[order.IDMedicina] = (acc[order.IDMedicina] || 0) + 1;
+            return acc;
+        }, {});
 
+        const topMedicineIDs = Object.entries(medicineCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(entry => parseInt(entry[0]));
+
+        const topMedicines = await prisma.medicinas.findMany({
+            where: {
+                IDMedicina: { in: topMedicineIDs }
+            }
+        });
+
+        const result = topMedicines.map(medicine => ({
+            id: medicine.IDMedicina,
+            name: medicine.NombreMedicina,
+            medDescription: medicine.Descripci_n,
+            totalOrders: medicineCount[medicine.IDMedicina]
+        }));
+
+        result.sort((a, b) => b.totalOrders - a.totalOrders);
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+// Get all the orders for a given provider ID, sort by newest first, also add the medicine name and description, and expected delivery date
+router_orders.get('/provider/:id', async (req, res) => {
+    try {
+        const orders = await prisma.ordenes.findMany({
+            where: {
+                IDProveedor: parseInt(req.params.id)
+            },
+            orderBy: {
+                FechaOrden: 'desc'
+            },
+            include: {
+                medicinas: true
+            }
+        });
+
+        const result = orders.map(order => ({
+            id: order.IDOrden,
+            medicine: order.medicinas.NombreMedicina,
+            medDescription: order.medicinas.Descripci_n,
+            quantity: order.CantidadOrdenada,
+            orderDate: order.FechaOrden,
+            expectedDelivery: order.EntregaEsperada,
+            status: order.Estatus
+        }));
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+//provider with most orders
+router_orders.get('/mostOrders', async (req, res) => {
+    try {
+        const orders = await prisma.ordenes.findMany({
+            select: {
+                IDProveedor: true
+            }
+        });
+
+        const providerCount = orders.reduce((acc, order) => {
+            acc[order.IDProveedor] = (acc[order.IDProveedor] || 0) + 1;
+            return acc;
+        }, {});
+
+        const topProviderIDs = Object.entries(providerCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(entry => parseInt(entry[0]));
+
+        const topProviders = await prisma.proveedores.findMany({
+            where: {
+                IDProveedor: { in: topProviderIDs }
+            }
+        });
+
+        const result = topProviders.map(provider => ({
+            id: provider.IDProveedor,
+            name: provider.Nombre,
+            totalOrders: providerCount[provider.IDProveedor]
+        }));
+
+        result.sort((a, b) => b.totalOrders - a.totalOrders);
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+// Generate an order for a given provider ID and medicine ID
+router_orders.post('/generate', async (req, res) => {
+    try {
+        const { providerID, medicineID, quantity } = req.body;
+
+        const medicine = await prisma.medicinas.findUnique({
+            where: {
+                IDMedicina: medicineID
+            }
+        });
+
+        const order = await prisma.ordenes.create({
+            data: {
+                IDProveedor: providerID,
+                IDMedicina: medicineID,
+                CantidadOrdenada: quantity,
+                Costo: medicine.Precio * quantity,
+                Estatus: 'Realizado',
+                EntregaEsperada: new Date(new Date().setDate(new Date().getDate() + 7))
+            }
+        });
+
+        res.json(order);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+// Get the total quantity supplied of all medicines supplied by a given provider by medicine
+router_orders.get('/totalQuantity/:id', async (req, res) => {
+    try {
+        const orders = await prisma.ordenes.findMany({
+            where: {
+                IDProveedor: parseInt(req.params.id)
+            },
+            include: {
+                medicinas: true
+            }
+        });
+
+        const result = orders.reduce((acc, order) => {
+            acc[order.medicinas.NombreMedicina] = (acc[order.medicinas.NombreMedicina] || 0) + order.CantidadOrdenada;
+            return acc;
+        }, {});
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
 
 export default router_orders;

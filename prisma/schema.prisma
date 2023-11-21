@@ -124,7 +124,7 @@ model ordenes {
   FechaOrden       DateTime?        @db.Date
   IDProveedor      Int?
   IDMedicina       Int?
-  CantidadOrdenada DateTime?        @db.Date
+  CantidadOrdenada Int?
   EntregaEsperada  DateTime?        @db.Date
   Costo            Float?
   Estatus          ordenes_Estatus?
