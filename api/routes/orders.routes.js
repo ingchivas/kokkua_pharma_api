@@ -154,13 +154,53 @@ router_orders.get('/graph', async (req, res) => {
     )
 });
 
+// Top 3 providers by orders delivered on time (EntregaEsperada must be before today) and lowest lead time (EntregaEsperada - FechaOrden)
+// The result must look like this:
+// [
+    // {
+    //     provider: "Provider 1",
+    //     ordersOnTime: 10% (percentage of orders delivered on time respect to total orders to that provider),
+    //     leadTime: 10 (average lead time for that provider)
+    // },
 
-
-
-
-
-
-
+    router_orders.get('/topProviders', async (req, res) => {
+        try {
+            const providers = await prisma.proveedores.findMany({
+                include: {
+                    ordenes: true
+                }
+            });
+    
+            const providerStats = providers.map(provider => {
+                const onTimeOrders = provider.ordenes.filter(order => 
+                    order.EntregaEsperada <= new Date() && order.FechaOrden <= order.EntregaEsperada
+                ).length;
+                const totalOrders = provider.ordenes.length;
+                const onTimePercentage = totalOrders > 0 ? (onTimeOrders / totalOrders * 100) : 0;
+    
+                const leadTimes = provider.ordenes.map(order => {
+                    const deliveryDate = new Date(order.EntregaEsperada);
+                    const orderDate = new Date(order.FechaOrden);
+                    return (deliveryDate - orderDate) / (1000 * 3600 * 24);
+                });
+                const averageLeadTime = leadTimes.length > 0 ? leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length : 0;
+    
+                return {
+                    provider: provider.Nombre,
+                    ordersOnTime: parseFloat(onTimePercentage.toFixed(2)),
+                    leadTime: parseFloat(averageLeadTime.toFixed(2))
+                };
+            });
+    
+            const topProviders = providerStats.sort((a, b) => {
+                return b.ordersOnTime - a.ordersOnTime || a.leadTime - b.leadTime;
+            }).slice(0, 3);
+    
+            res.json(topProviders);
+        } catch (error) {
+            res.status(500).send({ error: error.message });
+        }
+    });
 
 
 export default router_orders;
