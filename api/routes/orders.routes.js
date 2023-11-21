@@ -202,5 +202,48 @@ router_orders.get('/graph', async (req, res) => {
         }
     });
 
+    // Get the 2 most ordered medicines and their total orders and names
+    router_orders.get('/topMeds', async (req, res) => {
+        try {
+            const orders = await prisma.ordenes.findMany({
+                select: {
+                    IDMedicina: true
+                }
+            });
+    
+            const medicineCount = orders.reduce((acc, order) => {
+                acc[order.IDMedicina] = (acc[order.IDMedicina] || 0) + 1;
+                return acc;
+            }, {});
+    
+            const topMedicineIDs = Object.entries(medicineCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 2)
+                .map(entry => parseInt(entry[0]));
+    
+            const topMedicines = await prisma.medicinas.findMany({
+                where: {
+                    IDMedicina: { in: topMedicineIDs }
+                }
+            });
+    
+            const result = topMedicines.map(medicine => ({
+                id: medicine.IDMedicina,
+                name: medicine.NombreMedicina,
+                medDescription: medicine.Descripci_n,
+                totalOrders: medicineCount[medicine.IDMedicina]
+            }));
+
+            result.sort((a, b) => b.totalOrders - a.totalOrders);
+
+    
+            res.json(result);
+        } catch (error) {
+            res.status(500).send({ error: error.message });
+        }
+    });
+
+
+
 
 export default router_orders;
