@@ -401,7 +401,16 @@ router_orders.get('/totalQuantity/:id', async (req, res) => {
             return acc;
         }, {});
 
-        res.json(result);
+        //  Sort by quantity
+
+        const sortedResult = Object.entries(result)
+            .sort((a, b) => b[1] - a[1])
+            .map(entry => ({
+                medicine: entry[0],
+                quantity: entry[1]
+            }));
+
+        res.json(sortedResult);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }

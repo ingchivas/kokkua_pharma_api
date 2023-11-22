@@ -39,15 +39,23 @@ prov_router.get('/getProveedores/names', async (req, res) => {
 prov_router.post('/registerProveedor', async (req, res) => {
     const { Nombre, Ubicaci_n, NumContacto } = req.body;
     console.log(req.body);
-    const newProveedor = await prisma.proveedores.create({
-        data: {
-            Nombre,
-            Ubicaci_n,
-            NumContacto
-        }
-    });
-    res.json(newProveedor);
+    try {
+        const newProveedor = await prisma.proveedores.create({
+            data: {
+                Nombre,
+                Ubicaci_n,
+                NumContacto
+            }
+        });
+        res.json(newProveedor);
+    }
+
+    catch (error) {
+        console.log(error);
+        res.status(500).json(error);
+    }
 })
+
 
 // Delete proveedor by ID
 prov_router.delete('/deleteProveedor/:id', async (req, res) => {
