@@ -416,4 +416,29 @@ router_orders.get('/totalQuantity/:id', async (req, res) => {
     }
 });
 
+// Given an order ID in the request body, update the order status
+
+router_orders.put('/updateStatus', async (req, res) => {
+    console.log(req.body);
+    try {
+        const { orderID, status } = req.body;
+
+        const order = await prisma.ordenes.update({
+            where: {
+                IDOrden: orderID
+            },
+            data: {
+                Estatus: status
+            }
+        });
+        console.log(order);
+
+        res.json(order);
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ error: error.message });
+    }
+});
+
+
 export default router_orders;
