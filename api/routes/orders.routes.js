@@ -157,91 +157,91 @@ router_orders.get('/graph', async (req, res) => {
 // Top 3 providers by orders delivered on time (EntregaEsperada must be before today) and lowest lead time (EntregaEsperada - FechaOrden)
 // The result must look like this:
 // [
-    // {
-    //     provider: "Provider 1",
-    //     ordersOnTime: 10% (percentage of orders delivered on time respect to total orders to that provider),
-    //     leadTime: 10 (average lead time for that provider)
-    // },
+// {
+//     provider: "Provider 1",
+//     ordersOnTime: 10% (percentage of orders delivered on time respect to total orders to that provider),
+//     leadTime: 10 (average lead time for that provider)
+// },
 
-    router_orders.get('/topProviders', async (req, res) => {
-        try {
-            const providers = await prisma.proveedores.findMany({
-                include: {
-                    ordenes: true
-                }
-            });
-    
-            const providerStats = providers.map(provider => {
-                const onTimeOrders = provider.ordenes.filter(order => 
-                    order.EntregaEsperada <= new Date() && order.FechaOrden <= order.EntregaEsperada
-                ).length;
-                const totalOrders = provider.ordenes.length;
-                const onTimePercentage = totalOrders > 0 ? (onTimeOrders / totalOrders * 100) : 0;
-    
-                const leadTimes = provider.ordenes.map(order => {
-                    const deliveryDate = new Date(order.EntregaEsperada);
-                    const orderDate = new Date(order.FechaOrden);
-                    return (deliveryDate - orderDate) / (1000 * 3600 * 24);
-                });
-                const averageLeadTime = leadTimes.length > 0 ? leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length : 0;
-    
-                return {
-                    provider: provider.Nombre,
-                    ordersOnTime: parseFloat(onTimePercentage.toFixed(2)),
-                    leadTime: parseFloat(averageLeadTime.toFixed(2))
-                };
-            });
-    
-            const topProviders = providerStats.sort((a, b) => {
-                return b.ordersOnTime - a.ordersOnTime || a.leadTime - b.leadTime;
-            }).slice(0, 3);
-    
-            res.json(topProviders);
-        } catch (error) {
-            res.status(500).send({ error: error.message });
-        }
-    });
+router_orders.get('/topProviders', async (req, res) => {
+    try {
+        const providers = await prisma.proveedores.findMany({
+            include: {
+                ordenes: true
+            }
+        });
 
-    // Get the 2 most ordered medicines and their total orders and names
-    router_orders.get('/topMeds', async (req, res) => {
-        try {
-            const orders = await prisma.ordenes.findMany({
-                select: {
-                    IDMedicina: true
-                }
-            });
-    
-            const medicineCount = orders.reduce((acc, order) => {
-                acc[order.IDMedicina] = (acc[order.IDMedicina] || 0) + 1;
-                return acc;
-            }, {});
-    
-            const topMedicineIDs = Object.entries(medicineCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 2)
-                .map(entry => parseInt(entry[0]));
-    
-            const topMedicines = await prisma.medicinas.findMany({
-                where: {
-                    IDMedicina: { in: topMedicineIDs }
-                }
-            });
-    
-            const result = topMedicines.map(medicine => ({
-                id: medicine.IDMedicina,
-                name: medicine.NombreMedicina,
-                medDescription: medicine.Descripci_n,
-                totalOrders: medicineCount[medicine.IDMedicina]
-            }));
+        const providerStats = providers.map(provider => {
+            const onTimeOrders = provider.ordenes.filter(order =>
+                order.EntregaEsperada <= new Date() && order.FechaOrden <= order.EntregaEsperada
+            ).length;
+            const totalOrders = provider.ordenes.length;
+            const onTimePercentage = totalOrders > 0 ? (onTimeOrders / totalOrders * 100) : 0;
 
-            result.sort((a, b) => b.totalOrders - a.totalOrders);
+            const leadTimes = provider.ordenes.map(order => {
+                const deliveryDate = new Date(order.EntregaEsperada);
+                const orderDate = new Date(order.FechaOrden);
+                return (deliveryDate - orderDate) / (1000 * 3600 * 24);
+            });
+            const averageLeadTime = leadTimes.length > 0 ? leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length : 0;
 
-    
-            res.json(result);
-        } catch (error) {
-            res.status(500).send({ error: error.message });
-        }
-    });
+            return {
+                provider: provider.Nombre,
+                ordersOnTime: parseFloat(onTimePercentage.toFixed(2)),
+                leadTime: parseFloat(averageLeadTime.toFixed(2))
+            };
+        });
+
+        const topProviders = providerStats.sort((a, b) => {
+            return b.ordersOnTime - a.ordersOnTime || a.leadTime - b.leadTime;
+        }).slice(0, 3);
+
+        res.json(topProviders);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+// Get the 2 most ordered medicines and their total orders and names
+router_orders.get('/topMeds', async (req, res) => {
+    try {
+        const orders = await prisma.ordenes.findMany({
+            select: {
+                IDMedicina: true
+            }
+        });
+
+        const medicineCount = orders.reduce((acc, order) => {
+            acc[order.IDMedicina] = (acc[order.IDMedicina] || 0) + 1;
+            return acc;
+        }, {});
+
+        const topMedicineIDs = Object.entries(medicineCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 2)
+            .map(entry => parseInt(entry[0]));
+
+        const topMedicines = await prisma.medicinas.findMany({
+            where: {
+                IDMedicina: { in: topMedicineIDs }
+            }
+        });
+
+        const result = topMedicines.map(medicine => ({
+            id: medicine.IDMedicina,
+            name: medicine.NombreMedicina,
+            medDescription: medicine.Descripci_n,
+            totalOrders: medicineCount[medicine.IDMedicina]
+        }));
+
+        result.sort((a, b) => b.totalOrders - a.totalOrders);
+
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
 
 // Given a provider ID, get the 3 most ordered medicines and their total orders and names
 router_orders.get('/topMeds/:id', async (req, res) => {
@@ -306,6 +306,7 @@ router_orders.get('/provider/:id', async (req, res) => {
             medicine: order.medicinas.NombreMedicina,
             medDescription: order.medicinas.Descripci_n,
             quantity: order.CantidadOrdenada,
+            ammount: order.Costo * order.CantidadOrdenada,
             orderDate: order.FechaOrden,
             expectedDelivery: order.EntregaEsperada,
             status: order.Estatus
@@ -439,6 +440,105 @@ router_orders.put('/updateStatus', async (req, res) => {
         res.status(500).send({ error: error.message });
     }
 });
+
+// Route to get the orders past expected delivery date (EntregaEsperada must be before today) given a provider ID
+// Their status must be "Agendado", also keep medicine name and description
+router_orders.get('/pastDeliveryDate/:id', async (req, res) => {
+    try {
+        const orders = await prisma.ordenes.findMany({
+            where: {
+                IDProveedor: parseInt(req.params.id),
+                EntregaEsperada: {
+                    lte: new Date()
+                },
+                Estatus: 'Agendado'
+            },
+            include: {
+                medicinas: true
+            }
+        });
+
+        const result = orders.map(order => ({
+            id: order.IDOrden,
+            medicine: order.medicinas.NombreMedicina,
+            medDescription: order.medicinas.Descripci_n,
+            quantity: order.CantidadOrdenada,
+            ammount: order.Costo * order.CantidadOrdenada,
+            orderDate: order.FechaOrden,
+            expectedDelivery: order.EntregaEsperada,
+            status: order.Estatus
+        }));
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+}
+);
+
+// Get the total ammount of all orders for a given provider and also the missed ammount due to orders past expected delivery date
+// (EntregaEsperada must be before today)
+// The idea is to get the total ammount of orders for a provider and then subtract the ammount of orders past expected delivery date
+// To get missed revenue
+// The order status must be "Agendado" for the missed ammount, and "Realizado" for the total ammount
+// Remember that ammonut = CantidaOrdenada * Costo
+
+// Route to get total and missed amount for a given provider
+router_orders.get('/missedRevenue/:id', async (req, res) => {
+    try {
+        const providerID = parseInt(req.params.id);
+        const today = new Date();
+
+        // Get all completed orders for the provider
+        const totalOrders = await prisma.ordenes.findMany({
+            where: {
+                IDProveedor: providerID,
+                Estatus: 'Realizado'
+            },
+            select: {
+                CantidadOrdenada: true,
+                Costo: true
+            }
+        });
+
+        // Get all orders past expected delivery date with status "Agendado"
+        const missedOrders = await prisma.ordenes.findMany({
+            where: {
+                IDProveedor: providerID,
+                EntregaEsperada: {
+                    lt: today
+                },
+                Estatus: 'Agendado'
+            },
+            select: {
+                CantidadOrdenada: true,
+                Costo: true
+            }
+        });
+
+        // Calculate total amount
+        const totalAmount = totalOrders.reduce((acc, order) => acc + (order.CantidadOrdenada * order.Costo), 0);
+
+        // Calculate missed amount
+        const missedAmount = missedOrders.reduce((acc, order) => acc + (order.CantidadOrdenada * order.Costo), 0);
+
+        res.json(
+            [
+                {
+                    "revType": "Total",
+                    "revAmount": totalAmount
+                },
+                {
+                    "revType": "Missed",
+                    "revAmount": missedAmount
+                }
+            ]
+        );
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
 
 
 export default router_orders;
