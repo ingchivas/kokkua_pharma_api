@@ -209,6 +209,7 @@ model serviciosextra {
 
 model usuarios {
   IDUsuario      Int                  @id @default(autoincrement())
+  Username       String?              @db.VarChar(100)
   Password       String?              @db.VarChar(100)
   TipoAcceso     usuarios_TipoAcceso?
   loginventarios loginventarios[]
@@ -216,10 +217,11 @@ model usuarios {
 }
 
 enum usuarios_TipoAcceso {
-  Almacen
-  Proveedor
+  Paciente
   Ejecutivo
-  Compras
+  Administrador
+  Proveedor
+  Medico
 }
 
 enum polizas_TipoDePoliza {
