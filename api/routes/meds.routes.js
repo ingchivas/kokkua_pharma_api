@@ -60,6 +60,77 @@ router_meds.get('/critical', async (req, res) => {
     res.json(meds.slice(0, 3));
 });
 
+router_meds.post('/registerMed', async (req, res) => {
+    const { NombreMedicina, Descripci_n, Precio_Unitario, Criticidad, NivelDeInventario } = req.body;
+
+    let precio = parseFloat(Precio_Unitario);
+    let nivel = parseInt(NivelDeInventario);
+
+    console.log(req.body);
+    try {
+        const newMed = await prisma.medicinas.create({
+            data: {
+                NombreMedicina,
+                Descripci_n,
+                Precio_Unitario: precio,
+                Criticidad,
+                NivelDeInventario: nivel
+            }
+        });
+        res.json(newMed);
+    }
+
+    catch (error) {
+        console.log(error);
+        res.status(500).json(error);
+    }
+}
+);
+
+router_meds.put('/updateMed/:id', async (req, res) => {
+    console.log(req.body);
+    const { id } = req.params;
+    const { NombreMedicina, Descripci_n, Precio_Unitario, Criticidad, NivelDeInventario } = req.body;
+
+    let precio = parseFloat(Precio_Unitario);
+    let nivel = parseInt(NivelDeInventario);
+
+    try {
+        const updateMed = await prisma.medicinas.update({
+            where: {
+                IDMedicina: parseInt(id)
+            },
+            data: {
+                NombreMedicina,
+                Descripci_n,
+                Precio_Unitario: precio,
+                Criticidad,
+                NivelDeInventario: nivel
+            }
+        });
+        res.json(updateMed);
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json(error);
+    }
+});
+
+router_meds.delete('/deleteMed/:id', async (req, res) => {
+    const { id } = req.params;
+    const deleteMed = await prisma.medicinas.delete({
+        where: {
+            IDMedicina: parseInt(id)
+        }
+    });
+    res.json(deleteMed);
+}
+);
+
+
+
+
+
 
 
 

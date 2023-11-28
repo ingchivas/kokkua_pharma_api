@@ -67,8 +67,31 @@ router_orders.get('/soon', async (req, res) => {
 
 // All orders
 router_orders.get('/getAll', async (req, res) => {
-    const orders = await prisma.ordenes.findMany();
-    res.json(orders);
+    try {
+        const orders = await prisma.ordenes.findMany({
+            orderBy: {
+                FechaOrden: 'desc'
+            },
+            include: {
+                medicinas: true
+            }
+        });
+
+        const result = orders.map(order => ({
+            id: order.IDOrden,
+            medicine: order.medicinas.NombreMedicina,
+            medDescription: order.medicinas.Descripci_n,
+            quantity: order.CantidadOrdenada,
+            ammount: order.Costo * order.CantidadOrdenada,
+            orderDate: order.FechaOrden,
+            expectedDelivery: order.EntregaEsperada,
+            status: order.Estatus
+        }));
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
 });
 
 // Get percentage of orders ontime by month and previous month EntregeEsperada must be before today
