@@ -23,6 +23,26 @@ const prisma = new PrismaClient();
 //     @@index([IDUsuario], map: "IDUsuario")
 //   }
 
+
+// model medicinas {
+//     IDMedicina        Int                   @id @default(autoincrement())
+//     NombreMedicina    String                @db.VarChar(255)
+//     Descripci_n       String?               @map("Descripción") @db.Text
+//     Precio_Unitario   Float?
+//     Criticidad        medicinas_Criticidad?
+//     NivelDeInventario Int?
+//     loginventarios    loginventarios[]
+//     lote              lote[]
+//     ordenes           ordenes[]
+//     receta            receta[]
+//   }
+
+// enum medicinas_Criticidad {
+//     Alto
+//     Medio
+//     Bajo
+//   }
+
 // Latest orders
 router_orders.get('/latest', async (req, res) => {
     const orders = await prisma.ordenes.findMany({
@@ -556,6 +576,43 @@ router_orders.get('/meds/:id', async (req, res) => {
         res.status(500).send({ error: error.message });
     }
 });
+
+// Get all medicines in the catalog with all the providers that have supplied them
+// The provider name and ID must be included in the response {id: 1, name: "Provider 1"}
+
+router_orders.get('/meds', async (req, res) => {
+    try {
+        const medicines = await prisma.medicinas.findMany({
+            include: {
+                ordenes: {
+                    include: {
+                        proveedores: true
+                    }
+                }
+            }
+        });
+
+        const result = medicines.map(medicine => ({
+            id: medicine.IDMedicina,
+            name: medicine.NombreMedicina,
+            description: medicine.Descripci_n,
+            price: medicine.Precio_Unitario,
+            criticality: medicine.Criticidad,
+            inventoryLevel: medicine.NivelDeInventario,
+            providers: medicine.ordenes.map(order => ({
+                id: order.proveedores.IDProveedor,
+                name: order.proveedores.Nombre
+            }))
+        }));
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+}
+);
+
+
 
 
 
