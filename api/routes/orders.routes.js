@@ -77,8 +77,8 @@ router_orders.get('/getOnTime', async (req, res) => {
     onTimePercentagePrevMonthPercentage = onTimePercentagePrevMonthPercentage.slice(0, (onTimePercentagePrevMonthPercentage.indexOf(".")) + 3);
 
     return res.json({
-        "onTimePercentage": parseFloat(percentage),
-        "onTimePercentagePrevMonth": parseFloat(onTimePercentagePrevMonthPercentage),
+        "onTimePercentage": parseFloat(percentage).toFixed(2),
+        "onTimePercentagePrevMonth": parseFloat(onTimePercentagePrevMonthPercentage).toFixed(2),
         "total": total,
         "delta": parseFloat((parseFloat(percentage) - parseFloat(onTimePercentagePrevMonthPercentage)).toString().slice(0, ((parseFloat(percentage) - parseFloat(onTimePercentagePrevMonthPercentage)).toString().indexOf(".")) + 3))
     });
