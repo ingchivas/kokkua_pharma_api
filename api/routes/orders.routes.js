@@ -482,7 +482,6 @@ router_orders.get('/pastDeliveryDate/:id', async (req, res) => {
 // To get missed revenue
 // The order status must be "Agendado" for the missed ammount, and "Realizado" for the total ammount
 // Remember that ammonut = CantidaOrdenada * Costo
-
 // Route to get total and missed amount for a given provider
 router_orders.get('/missedRevenue/:id', async (req, res) => {
     try {
@@ -534,6 +533,25 @@ router_orders.get('/missedRevenue/:id', async (req, res) => {
                 }
             ]
         );
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+// Get all medicines that a provider supplies
+router_orders.get('/meds/:id', async (req, res) => {
+    try {
+        const medicines = await prisma.medicinas.findMany({
+            where: {
+                ordenes: {
+                    some: {
+                        IDProveedor: parseInt(req.params.id)
+                    }
+                }
+            }
+        });
+
+        res.json(medicines);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
