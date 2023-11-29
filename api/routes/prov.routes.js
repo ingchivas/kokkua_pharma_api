@@ -86,6 +86,18 @@ prov_router.put('/updateProveedor/:id', async (req, res) => {
     res.json(updateProveedor);
 })
 
+// Get all provedores and ID and Nombre
+prov_router.get('/nameProveedores', async (req, res) => {
+    const proveedoresNames = await prisma.proveedores.findMany({
+        select: {
+            IDProveedor: true,
+            Nombre: true
+        }
+    });
+    res.json(proveedoresNames);
+})
+
+
 
 
 

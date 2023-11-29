@@ -73,7 +73,8 @@ router_orders.get('/getAll', async (req, res) => {
                 FechaOrden: 'desc'
             },
             include: {
-                medicinas: true
+                medicinas: true,
+                proveedores: true
             }
         });
 
@@ -85,7 +86,8 @@ router_orders.get('/getAll', async (req, res) => {
             ammount: order.Costo * order.CantidadOrdenada,
             orderDate: order.FechaOrden,
             expectedDelivery: order.EntregaEsperada,
-            status: order.Estatus
+            status: order.Estatus,
+            provider: order.proveedores.Nombre
         }));
 
         res.json(result);
@@ -340,7 +342,7 @@ router_orders.get('/provider/:id', async (req, res) => {
                 FechaOrden: 'desc'
             },
             include: {
-                medicinas: true
+                medicinas: true,
             }
         });
 
@@ -353,6 +355,7 @@ router_orders.get('/provider/:id', async (req, res) => {
             orderDate: order.FechaOrden,
             expectedDelivery: order.EntregaEsperada,
             status: order.Estatus
+            
         }));
 
         res.json(result);
@@ -415,15 +418,18 @@ router_orders.post('/generate', async (req, res) => {
             data: {
                 IDProveedor: providerID,
                 IDMedicina: medicineID,
+                IDUsuario: 1,
                 CantidadOrdenada: quantity,
-                Costo: medicine.Precio * quantity,
-                Estatus: 'Realizado',
+                Costo: medicine.Precio_Unitario * quantity,
+                FechaOrden: new Date(),
+                Estatus: 'Agendado',
                 EntregaEsperada: new Date(new Date().setDate(new Date().getDate() + 7))
             }
         });
-
+        console.log(order);
         res.json(order);
     } catch (error) {
+        console.log(error);
         res.status(500).send({ error: error.message });
     }
 });

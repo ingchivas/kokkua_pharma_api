@@ -127,6 +127,28 @@ router_meds.delete('/deleteMed/:id', async (req, res) => {
 }
 );
 
+// Get all medicines and concatenate their names with descriptions
+// Return ID and concatenated string
+
+router_meds.get('/medsNames', async (req, res) => {
+    const meds = await prisma.medicinas.findMany({
+        select: {
+            IDMedicina: true,
+            NombreMedicina: true,
+            Descripci_n: true
+        }
+    });
+
+    meds.forEach(med => {
+        med.NombreMedicina += ` - ${med.Descripci_n}`;
+        delete med.Descripci_n;
+    });
+
+    res.json(meds);
+});
+
+
+
 
 
 
