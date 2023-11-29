@@ -23,12 +23,41 @@ usr_router.get('/getTipoAcceso/:username', async (req, res) => {
         }
     });
     if (user) {
-        res.json(user.TipoAcceso);
+        res.json({
+            tipoAcceso: user.TipoAcceso
+        });
     } else {
-        res.json(null);
+        res.json({
+            error: "Usuario no encontrado"
+        });
     }
 })
 
+// Given a username and a password, return if the user password is correct recieve in a JSON
+usr_router.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    console.log(req.body);
+    const user = await prisma.usuarios.findFirst({
+        where: {
+            Username: username,
+            Password: password
+        }
+    });
+    if (user) {
+        res.json(
+            {
+                result : true,
+                TipoAcceso: user.TipoAcceso
+            }
+        );
+    } else {
+        res.json(
+            {
+                error : "Usuario o contraseña incorrectos",
+            }
+        );
+    }
+})
 
 
 
